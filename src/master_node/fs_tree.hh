@@ -9,22 +9,57 @@
 template <class T>
 class FsTree : public QMultiHash <QString, T> {
 
+private:
+	bool _dirty; /* hmmm, bad boy ! */
+
 public:
 
-	FsTree() : QMultiHash <QString, T> (){}
+	FsTree() : QMultiHash <QString, T> (), _dirty(false){}
 	virtual ~FsTree() {}
 
 	bool insert(const QString &path, const T &t, bool isDir = false);
 	QString getParent(const QString &path);
 	static FsTree<T> loadFromDisk(const QString &path);
 	bool sendToFile(const QString &path);
+	int remove(const QString &path, const T &t);
+	int remove(const QString &path);
 
 	static const QString DIR_SEPARATOR;
+
+	bool isDirty();
 
 };
 
 template <class T>
 const QString FsTree<T>::DIR_SEPARATOR = "/";
+
+template <class T>
+bool FsTree<T>::isDirty()
+{
+	return this->_dirty;
+}
+
+template <class T>
+int FsTree<T>::remove(const QString &path, const T &t)
+{
+	int r;
+
+	r = QMultiHash<QString, T>::remove(path, t);
+	if (r > 0)
+		this->_dirty = true;
+	return r;
+}
+
+template <class T>
+int FsTree<T>::remove(const QString &path)
+{
+	int r;
+
+	r = QMultiHash<QString, T>::remove(path);
+	if (r > 0)
+		this->_dirty = true;
+	return r;
+}
 
 template <class T>
 FsTree<T> FsTree<T>::loadFromDisk(const QString &path)
@@ -56,6 +91,7 @@ bool FsTree<T>::sendToFile(const QString &path)
 
 	stream.setDevice(&file);
 	stream << (*this);
+	this->_dirty = false;
 	return true;
 }
 
@@ -67,6 +103,7 @@ bool FsTree<T>::insert(const QString &path, const T &t, bool isDir)
 		qDebug() << "Dir: " << path << " already present!";
 		return false;
 	}
+	this->_dirty = true;
 	QMultiHash<QString, T>::insert(path, t);
 	return true;
 }
