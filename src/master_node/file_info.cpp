@@ -15,3 +15,13 @@ QDataStream &operator>>(QDataStream &in, FileInfo &fileInfo)
 		fileInfo.isDir;
 	return in;
 }
+
+bool FileInfo::operator==(const FileInfo &other)
+{
+	if (this->fileName == other.fileName && this->aTime == other.aTime &&
+		this->mTime == other.mTime && this->cTime == other.cTime &&
+		this->isDir == other.isDir && this->size == other.size &&
+		this->chunksLocation == other.chunksLocation)
+		return true;
+	return false;
+}

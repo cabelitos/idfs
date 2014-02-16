@@ -21,6 +21,8 @@ struct FileInfo {
 	QDateTime mTime; //motification
 	qint64 size;
 	bool isDir;
+
+	bool operator==(const FileInfo &other);
 };
 
 QDataStream &operator<<(QDataStream &out, const FileInfo &fileInfo);

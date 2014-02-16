@@ -12,7 +12,7 @@ class MasterNode: public QTcpServer {
 
 private:
 	QList<QTcpSocket *> _clients;
-	FsTree<FileInfo> _files;
+	FsTree _files;
 	QTimer _saveTimeout;
 
 private slots:

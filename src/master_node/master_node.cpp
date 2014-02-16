@@ -17,16 +17,16 @@ MasterNode::MasterNode(QObject *parent) : QTcpServer(parent)
 	connect(this, SIGNAL(newConnection()), this, SLOT(newConn()));
 
 	path = QStandardPaths::locate(QStandardPaths::DataLocation, FS_TREE_FILE_NAME);
-	this->_files = FsTree<FileInfo>::loadFromDisk(path);
+	this->_files = FsTree::loadFromDisk(path);
 
 	/* No previous file, create root ! */
 	if (this->_files.empty())
 	{
 		FileInfo f;
-		f.fileName = FsTree<FileInfo>::DIR_SEPARATOR;
+		f.fileName = FsTree::DIR_SEPARATOR;
 		f.isDir = true;
 		f.cTime = QDateTime::currentDateTime();
-		this->_files.insert(FsTree<FileInfo>::DIR_SEPARATOR, f, true);
+		this->_files.insert(FsTree::DIR_SEPARATOR, f);
 	}
 	connect(&this->_saveTimeout, SIGNAL(timeout()), this, SLOT(_saveTree()));
 	this->_saveTimeout.start(TIMEOUT_5_MIN);
