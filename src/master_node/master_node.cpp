@@ -6,7 +6,6 @@
 #include <QDataStream>
 #include <QStandardPaths>
 #include <QDir>
-#include "fs_message.hh"
 
 #define FS_TREE_FILE_NAME "fs_tree.bin"
 #define TIMEOUT_5_MIN (300000)
@@ -14,7 +13,6 @@
 MasterNode::MasterNode(QObject *parent) : QTcpServer(parent)
 {
 	QString path;
-	connect(this, SIGNAL(newConnection()), this, SLOT(newConn()));
 
 	path = QStandardPaths::locate(QStandardPaths::DataLocation, FS_TREE_FILE_NAME);
 	this->_files = FsTree::loadFromDisk(path);
@@ -56,20 +54,28 @@ void MasterNode::_saveTree()
 		qDebug() << "Could not save the fs tree at:" << path;
 }
 
-void MasterNode::newConn()
+void MasterNode::incomingConnection(qintptr socketDescriptor)
 {
-	QTcpSocket *client = this->nextPendingConnection();
+	MasterNodeClient *client = new MasterNodeClient(this);
+	if (!client->setSocketDescriptor(socketDescriptor))
+	{
+		qDebug() << "Could not set the descriptor:" <<
+			socketDescriptor << " to the socket";
+		delete client;
+		return;
+	}
+	else
+		qDebug() << "New client!";
 
-	connect(client, SIGNAL(readyRead()), this, SLOT(clientCanRead()));
-	connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected()));
-	qDebug() << "New client" << client;
+	connect(client, SIGNAL(disconnected()), this, SLOT(_clientDisconnected()));
+	connect(client, SIGNAL(newMessage(FsMessage)), this, SLOT(_clientMessage(FsMessage)));
 	this->_clients.append(client);
 }
 
-void MasterNode::clientDisconnected()
+void MasterNode::_clientDisconnected()
 {
-	QTcpSocket *client;
-	QMutableListIterator<QTcpSocket *> it(this->_clients);
+	MasterNodeClient *client;
+	QMutableListIterator<MasterNodeClient *> it(this->_clients);
 
 	qDebug() << "Client disconnected !";
 	while (it.hasNext())
@@ -83,16 +89,9 @@ void MasterNode::clientDisconnected()
 	}
 }
 
-void MasterNode::clientCanRead()
+void MasterNode::_clientMessage(FsMessage fsMessage)
 {
-	QTcpSocket *client;
-
-	foreach(client, this->_clients)
-	{
-		if (client->bytesAvailable() < 1)
-			continue;
-	//TODO
-		QDataStream stream(client);
-		qDebug() << "3";
-	}
+	Q_UNUSED(fsMessage);
+	qDebug() << "New message!";
 }
+

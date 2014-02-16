@@ -22,7 +22,7 @@ public:
 	void sendFsMessage(const FsMessage &fsMessage);
 
 signals:
-	void newMessage(const FsMessage &fsMessage);
+	void newMessage(FsMessage fsMessage);
 
 protected slots:
 	virtual void canRead();
