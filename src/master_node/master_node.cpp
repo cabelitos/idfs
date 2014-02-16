@@ -6,6 +6,7 @@
 #include <QDataStream>
 #include <QStandardPaths>
 #include <QDir>
+#include "fs_message.hh"
 
 #define FS_TREE_FILE_NAME "fs_tree.bin"
 #define TIMEOUT_5_MIN (300000)
