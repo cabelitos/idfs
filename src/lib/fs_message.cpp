@@ -3,52 +3,30 @@
 QDataStream &operator<<(QDataStream &out, const FsMessage &fsMessage)
 {
 	out << fsMessage.host <<
-		fsMessage.hostType << fsMessage.timeStamp;
+		fsMessage.hostType << fsMessage.timeStamp << fsMessage.messageType
+		<< fsMessage.commandType << fsMessage.args << fsMessage.fileData <<
+		fsMessage.success << fsMessage.errorMessage;
 	return out;
 }
 
 QDataStream &operator>>(QDataStream &in, FsMessage &fsMessage)
 {
 	in >> fsMessage.host >>
-		fsMessage.hostType >> fsMessage.timeStamp;
-	return in;
-}
-
-QDataStream &operator<<(QDataStream &out, const FsCommandMessage &fsCommandMessage)
-{
-	out << fsCommandMessage.commandType <<
-		fsCommandMessage.args << fsCommandMessage.fileData;
-	return out;
-}
-
-QDataStream &operator>>(QDataStream &in, FsCommandMessage &fsCommandMessage)
-{
-	in >> fsCommandMessage.commandType >>
-		fsCommandMessage.args >> fsCommandMessage.fileData;
-	return in;
-}
-
-QDataStream &operator<<(QDataStream &out, const FsReplyMessage &fsReplyMessage)
-{
-	out << fsReplyMessage.success << fsReplyMessage.message;
-	return out;
-}
-
-QDataStream &operator>>(QDataStream &in, FsReplyMessage &fsReplyMessage)
-{
-	in >> fsReplyMessage.success >> fsReplyMessage.message;
+		fsMessage.hostType >> fsMessage.timeStamp >> fsMessage.messageType
+		>> fsMessage.commandType >> fsMessage.args >> fsMessage.fileData >>
+		fsMessage.success >> fsMessage.errorMessage;
 	return in;
 }
 
 QDataStream &operator<<(QDataStream &out,
-	const FsCommandMessage::FsCommandType &fsCommandType)
+	const FsMessage::FsCommandType &fsCommandType)
 {
 	out >> (quint32&)fsCommandType;
 	return out;
 }
 
 QDataStream &operator>>(QDataStream &in,
-	FsCommandMessage::FsCommandType &fsCommandType)
+	FsMessage::FsCommandType &fsCommandType)
 {
 	in >> (quint32&)fsCommandType;
 	return in;
@@ -65,5 +43,19 @@ QDataStream &operator>>(QDataStream &in,
 	FsMessage::FsMessageHostType &fsMessageHostType)
 {
 	in >> (quint32&)fsMessageHostType;
+	return in;
+}
+
+QDataStream &operator<<(QDataStream &out,
+	const FsMessage::FsMessageType &messageType)
+{
+	out << (quint32&)messageType;
+	return out;
+}
+
+QDataStream &operator>>(QDataStream &in,
+	FsMessage::FsMessageType &messageType)
+{
+	in >> (quint32&)messageType;
 	return in;
 }

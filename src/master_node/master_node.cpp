@@ -23,9 +23,9 @@ MasterNode::MasterNode(QObject *parent) : QTcpServer(parent)
 	if (this->_files.empty())
 	{
 		FileInfo f;
-		f.setFileName(FsTree<FileInfo>::DIR_SEPARATOR);
-		f.setIsDir(true);
-		f.setCTime(QDateTime::currentDateTime());
+		f.fileName = FsTree<FileInfo>::DIR_SEPARATOR;
+		f.isDir = true;
+		f.cTime = QDateTime::currentDateTime();
 		this->_files.insert(FsTree<FileInfo>::DIR_SEPARATOR, f, true);
 	}
 	connect(&this->_saveTimeout, SIGNAL(timeout()), this, SLOT(_saveTree()));
