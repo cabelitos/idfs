@@ -62,14 +62,16 @@ void MasterNode::incomingConnection(qintptr socketDescriptor)
 		qDebug() << "Could not set the descriptor:" <<
 			socketDescriptor << " to the socket";
 		delete client;
-		return;
 	}
 	else
+	{
 		qDebug() << "New client!";
-
-	connect(client, SIGNAL(disconnected()), this, SLOT(_clientDisconnected()));
-	connect(client, SIGNAL(newMessage(FsMessage)), this, SLOT(_clientMessage(FsMessage)));
-	this->_clients.append(client);
+		connect(client, SIGNAL(disconnected()), this,
+			SLOT(_clientDisconnected()));
+		connect(client, SIGNAL(newMessage(FsMessage)), this,
+			SLOT(_clientMessage(FsMessage)));
+		this->_clients.append(client);
+	}
 }
 
 void MasterNode::_clientDisconnected()
