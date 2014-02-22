@@ -8,7 +8,7 @@
 #include <QDir>
 
 #define FS_TREE_FILE_NAME "fs_tree.bin"
-#define TIMEOUT_5_MIN (300000)
+#define TIMEOUT_5_SEC (5000)
 
 MasterNode::MasterNode(QObject *parent) : QTcpServer(parent)
 {
@@ -27,7 +27,7 @@ MasterNode::MasterNode(QObject *parent) : QTcpServer(parent)
 		this->_files.insert(FsTree::DIR_SEPARATOR, f);
 	}
 	connect(&this->_saveTimeout, SIGNAL(timeout()), this, SLOT(_saveTree()));
-	this->_saveTimeout.start(TIMEOUT_5_MIN);
+	this->_saveTimeout.start(TIMEOUT_5_SEC);
 }
 
 MasterNode::~MasterNode()
@@ -93,7 +93,29 @@ void MasterNode::_clientDisconnected()
 
 void MasterNode::_clientMessage(FsMessage fsMessage)
 {
-	Q_UNUSED(fsMessage);
 	qDebug() << "New message!";
+	FsMessage response;
+
+	response.messageType =	FsMessage::REPLY;
+	response.hostType =	 FsMessage::MASTER_NODE;
+	response.timeStamp = QDateTime::currentDateTime();
+	if (fsMessage.commandType == FsMessage::UNKNOWN_COMMAND)
+	{
+		response.success = false;
+		response.errorMessage = "Unknown command!";
+	}
+	else if (fsMessage.commandType == FsMessage::LS)
+	{
+		response.success = this->_files.ls(fsMessage.args[0], response.args);
+	}
+	else if (fsMessage.commandType == FsMessage::MKDIR)
+	{
+		response.success = this->_files.mkdir(fsMessage.args[0],
+			response.errorMessage);
+	}
+
+	/* Evil, but necessary */
+	MasterNodeClient *sender = dynamic_cast<MasterNodeClient*>(this->sender());
+	sender->sendFsMessage(response);
 }
 

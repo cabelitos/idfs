@@ -23,6 +23,7 @@ void MasterNodeClient::sendFsMessage(const FsMessage &fsMessage)
 {
 	QDataStream stream(this);
 	stream << fsMessage;
+	this->flush();
 }
 
 void MasterNodeClient::canRead()

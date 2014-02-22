@@ -4,10 +4,11 @@
 #include <QDateTime>
 #include <QDataStream>
 #include <QList>
+#include <QStringList>
 #include <QByteArray>
 
 /* Data only, make as POD. */
-
+/* TODO, This message is toooooooo complex, maybe we can remove some fields! */
 struct Q_CORE_EXPORT FsMessage {
 	enum FsMessageHostType {
 		UNKNOWN_HOST = 0,
@@ -18,6 +19,8 @@ struct Q_CORE_EXPORT FsMessage {
 
 	enum FsCommandType {
 		UNKNOWN_COMMAND = 0,
+		LS,
+		MKDIR
 		/* TODO put commands here */
 	};
 
@@ -33,7 +36,7 @@ struct Q_CORE_EXPORT FsMessage {
 
 	FsMessageType messageType;
 	FsCommandType commandType;
-	QList<QString> args;
+	QStringList args;
 	QByteArray fileData;
 
 	bool success;
