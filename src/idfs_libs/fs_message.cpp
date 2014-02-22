@@ -1,4 +1,5 @@
 #include "fs_message.hh"
+#include <QDebug>
 
 QDataStream &operator<<(QDataStream &out, const FsMessage &fsMessage)
 {
@@ -21,7 +22,7 @@ QDataStream &operator>>(QDataStream &in, FsMessage &fsMessage)
 QDataStream &operator<<(QDataStream &out,
 	const FsMessage::FsCommandType &fsCommandType)
 {
-	out >> (quint32&)fsCommandType;
+ 	out << (quint32&)fsCommandType;
 	return out;
 }
 
