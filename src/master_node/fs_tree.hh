@@ -17,7 +17,6 @@ public:
 	virtual ~FsTree();
 
 	bool insert(const QString &path, const FileInfo &fileInfo);
-	QString getParent(const QString &path);
 	static FsTree loadFromDisk(const QString &path);
 	bool sendToFile(const QString &path);
 	int remove(const QString &path, const FileInfo &fileInfo);

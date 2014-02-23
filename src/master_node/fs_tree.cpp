@@ -143,23 +143,3 @@ bool FsTree::mkdir(const QString &path, QString &errorMsg)
 	}
 	return r;
 }
-
-QString FsTree::getParent(const QString &path)
-{
-	int last;
-
-	if (!this->contains(path) || path == FsTree::DIR_SEPARATOR)
-		return QString::Null();
-
-	last = path.lastIndexOf(FsTree::DIR_SEPARATOR);
-
-	if (last < 0)
-		return QString::Null();
-
-	if (last == 0) /* root !*/
-		return QString(FsTree::DIR_SEPARATOR);
-
-	QString r = path;
-	r.replace(last, path.size() - last, "");
-	return r;
-}
