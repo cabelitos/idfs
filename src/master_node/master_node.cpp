@@ -113,6 +113,11 @@ void MasterNode::_clientMessage(FsMessage fsMessage)
 		response.success = this->_files.mkdir(fsMessage.args[0],
 			response.errorMessage);
 	}
+	else if (fsMessage.commandType == FsMessage::TOUCH)
+	{
+		response.success = this->_files.touch(fsMessage.args[0],
+			response.errorMessage);
+	}
 
 	/* Evil, but necessary */
 	MasterNodeClient *sender = dynamic_cast<MasterNodeClient*>(this->sender());

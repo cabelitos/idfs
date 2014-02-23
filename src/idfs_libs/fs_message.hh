@@ -20,7 +20,8 @@ struct Q_CORE_EXPORT FsMessage {
 	enum FsCommandType {
 		UNKNOWN_COMMAND = 0,
 		LS,
-		MKDIR
+		MKDIR,
+		TOUCH
 		/* TODO put commands here */
 	};
 

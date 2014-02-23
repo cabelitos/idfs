@@ -17,6 +17,8 @@ static FsMessage _message_create(QStringList &args, QString command)
 		msg.commandType = FsMessage::LS;
 	else if (command == "mkdir")
 		msg.commandType = FsMessage::MKDIR;
+	else if (command == "touch")
+		msg.commandType = FsMessage::TOUCH;
 	else
 		msg.commandType = FsMessage::UNKNOWN_COMMAND;
 
@@ -29,6 +31,7 @@ int main(int argc, char **argv)
 	QCoreApplication app(argc, argv);
 	QCommandLineParser parser;
 	FsMessage resp;
+
 
 	QCoreApplication::setApplicationName("IDFS client");
 	QCoreApplication::setApplicationVersion("1.0");
@@ -62,7 +65,7 @@ int main(int argc, char **argv)
 	socket.connectToHost(host, port);
 	socket.waitForConnected();
 	QDataStream stream(&socket);
-	QString command = args.takeFirst();
+	QString command = args.takeFirst().toLower();
 	stream <<  _message_create(args, command);
 	socket.flush();
 	socket.waitForReadyRead();

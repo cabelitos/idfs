@@ -70,19 +70,24 @@ bool FsTree::sendToFile(const QString &path)
 	return true;
 }
 
-bool FsTree::_fileExistInDir(const QString &path, const QString &name)
+bool FsTree::_fileExistInDir(const QString &path, const QString &name,
+	FileInfo *outInfo)
 {
 	foreach (FileInfo info, this->values(path))
 	{
 		if (info.fileName == name)
+		{
+			if (outInfo)
+				*outInfo = info;
 			return true;
+		}
 	}
 	return false;
 }
 
 bool FsTree::insert(const QString &path, const FileInfo &fileInfo)
 {
-	if (this->_fileExistInDir(path, fileInfo.fileName))
+	if (this->_fileExistInDir(path, fileInfo.fileName, NULL))
 	{
 		qDebug() << " Already present!";
 		return false;
@@ -100,6 +105,58 @@ bool FsTree::ls(const QString &path, QStringList &files)
 			continue;
 		files << info.fileName;
 	}
+	return true;
+}
+
+bool FsTree::touch(const QString &path, QString &errorMsg)
+{
+	QStringList splited = path.split(FsTree::DIR_SEPARATOR,
+		QString::SkipEmptyParts);
+
+	if (splited.size() == 0)
+	{
+		errorMsg = "Invalid path!";
+		return false;
+	}
+
+	QString touchedFile = splited.takeLast();
+	QString last = FsTree::DIR_SEPARATOR;
+	foreach(QString s, splited)
+	{
+		FileInfo info;
+		if (this->_fileExistInDir(last, s, &info))
+		{
+			if (!info.isDir)
+			{
+				errorMsg = s + " is not a dir";
+				return false;
+			}
+		}
+		else
+		{
+			errorMsg = "dir:" + s + " not found!";
+			return false;
+		}
+		if (last.size() == 1)
+			last += s;
+		else
+			last += FsTree::DIR_SEPARATOR + s;
+	}
+
+	if (this->_fileExistInDir(last, touchedFile, NULL))
+	{
+		errorMsg = "File already exists!";
+		return false;
+	}
+	FileInfo newFile;
+	newFile.fileName = touchedFile;
+	newFile.isDir = false;
+	newFile.cTime = QDateTime::currentDateTime();
+	newFile.size = 0;
+	this->insert(last, newFile);
+	last += FsTree::DIR_SEPARATOR + touchedFile;
+	/* Include itself, so it can be found if the user types ls /path/to/touch/file/touchedfile*/
+	this->insert(last, newFile);
 	return true;
 }
 
