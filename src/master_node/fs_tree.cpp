@@ -87,10 +87,17 @@ bool FsTree::_fileExistInDir(const QString &path, const QString &name,
 
 bool FsTree::insert(const QString &path, const FileInfo &fileInfo)
 {
-	if (this->_fileExistInDir(path, fileInfo.fileName, NULL))
+	FileInfo outInfo;
+
+	if (this->_fileExistInDir(path, fileInfo.fileName, &outInfo))
 	{
-		qDebug() << " Already present!";
-		return false;
+		if (!outInfo.isDir)
+		{
+			qDebug() << path << " is not a dir!";
+			return false;
+		}
+		else
+			return true;
 	}
 	this->_dirty = true;
 	QMultiHash<QString, FileInfo>::insert(path, fileInfo);
@@ -173,6 +180,7 @@ bool FsTree::mkdir(const QString &path, QString &errorMsg)
 	else
 	{
 		QString last = FsTree::DIR_SEPARATOR;
+		r = true;
 		foreach (QString s, splited)
 		{
 			FileInfo info;
@@ -180,7 +188,12 @@ bool FsTree::mkdir(const QString &path, QString &errorMsg)
 			info.fileName = s;
 			info.isDir = true;
 			info.cTime = QDateTime::currentDateTime();
-			this->insert(last, info);
+			if (!this->insert(last, info))
+			{
+				r = false;
+				errorMsg = s + " is not a dir!";
+				break;
+			}
 
 			if (last.size() == 1)
 				last += s;
@@ -188,7 +201,6 @@ bool FsTree::mkdir(const QString &path, QString &errorMsg)
 				last += FsTree::DIR_SEPARATOR + s;
 			qDebug() << last;
 		}
-		r = true;
 	}
 	foreach(QString s, this->keys())
 	{
