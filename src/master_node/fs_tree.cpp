@@ -106,7 +106,13 @@ bool FsTree::insert(const QString &path, const FileInfo &fileInfo)
 
 bool FsTree::ls(const QString &path, QStringList &files)
 {
-	foreach(FileInfo info, this->values(path))
+	QString aux;
+
+	if (path != FsTree::DIR_SEPARATOR && path.endsWith(FsTree::DIR_SEPARATOR))
+		aux = path.left(path.size() - 1);
+	else
+		aux = path;
+	foreach(FileInfo info, this->values(aux))
 	{
 		if (FsTree::DIR_SEPARATOR == info.fileName)
 			continue;
