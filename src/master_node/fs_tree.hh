@@ -27,7 +27,10 @@ public:
 
 	bool mkdir(const QString &path, QString &errorMsg);
 	bool ls(const QString &path, QStringList &files);
-	bool touch(const QString &path, QString &errorMsg);
+	bool insertFile(const QString &path, qint64 fileSize, QString &errorMsg);
+	bool addChunckToFileInfo(const QString &path,const QString &slaveName, const QString &filePart);
+
+	QString createPath(const QString &fileName, const QString &basePath);
 
 	static const QString DIR_SEPARATOR;
 

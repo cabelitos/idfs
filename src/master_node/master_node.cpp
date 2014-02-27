@@ -1,7 +1,9 @@
 #include "master_node.hh"
+#include "file_info.hh"
 #include <QDebug>
 #include <QTcpSocket>
 #include <QMutableListIterator>
+#include <QListIterator>
 #include <QAbstractSocket>
 #include <QDataStream>
 #include <QStandardPaths>
@@ -9,6 +11,7 @@
 
 #define FS_TREE_FILE_NAME "fs_tree.bin"
 #define TIMEOUT_5_SEC (5000)
+#define BLOCK_SIZE (512)
 
 MasterNode::MasterNode(QObject *parent) : QTcpServer(parent)
 {
@@ -91,6 +94,59 @@ void MasterNode::_clientDisconnected()
 	}
 }
 
+bool MasterNode::_sendFileToSlaves(const QString &path,
+	const QString &fileName, const QString &fullPath,
+	const QByteArray &fileData, QString &errorMsg)
+{
+	QList<MasterNodeClient *> slaves;
+
+	foreach (MasterNodeClient *client, this->_clients)
+	{
+		if (client->isSlave())
+			slaves.append(client);
+	}
+
+	if (slaves.isEmpty())
+	{
+		errorMsg = "There are no slave nodes connected!";
+		return false;
+	}
+
+	QListIterator<MasterNodeClient *> it(slaves);
+	qint64 pNum, pos;
+
+	pos = pNum = 0;
+
+	while (pos < fileData.size())
+	{
+		FsMessage msg;
+		qint64 read;
+		QString partName;
+		MasterNodeClient *slave;
+
+		if (pos + BLOCK_SIZE > fileData.size())
+			read = fileData.size() - pos;
+		else
+			read = BLOCK_SIZE;
+
+		msg.messageType =	FsMessage::STORE_FILE;
+		msg.hostType =	 FsMessage::MASTER_NODE;
+		msg.timeStamp = QDateTime::currentDateTime();
+
+		msg.fileData = fileData.mid(pos, read);
+		partName = fileName + "-p" + QString::number(pNum++);
+		msg.args << path;
+		msg.args << partName;
+		slave = it.next();
+		slave->pushFilePartMsg(msg);
+		this->_files.addChunckToFileInfo(fullPath, slave->getName(), path+partName);
+		if (!it.hasNext())
+			it.toFront();
+		pos += read;
+	}
+	return true;
+}
+
 void MasterNode::_clientMessage(FsMessage fsMessage)
 {
 	qDebug() << "New message!";
@@ -99,26 +155,50 @@ void MasterNode::_clientMessage(FsMessage fsMessage)
 	response.messageType =	FsMessage::REPLY;
 	response.hostType =	 FsMessage::MASTER_NODE;
 	response.timeStamp = QDateTime::currentDateTime();
-	if (fsMessage.commandType == FsMessage::UNKNOWN_COMMAND)
+	if (fsMessage.messageType != FsMessage::COMMAND)
 	{
 		response.success = false;
-		response.errorMessage = "Unknown command!";
+		response.errorMessage = "Message must be a command!";
 	}
-	else if (fsMessage.commandType == FsMessage::LS)
+	else
 	{
-		response.success = this->_files.ls(fsMessage.args[0], response.args);
+		if (fsMessage.commandType == FsMessage::UNKNOWN_COMMAND)
+		{
+			response.success = false;
+			response.errorMessage = "Unknown command!";
+		}
+		else if (fsMessage.commandType == FsMessage::LS)
+		{
+			response.success = this->_files.ls(fsMessage.args[0], response.args);
+		}
+		else if (fsMessage.commandType == FsMessage::MKDIR)
+		{
+			response.success = this->_files.mkdir(fsMessage.args[0],
+				response.errorMessage);
+		}
+		else if (fsMessage.commandType == FsMessage::TOUCH)
+		{
+			response.success = this->_files.insertFile(fsMessage.args[0],
+				0, response.errorMessage);
+		}
+		else if (fsMessage.commandType == FsMessage::PUSH_FILE)
+		{
+			QString path =
+				this->_files.createPath(fsMessage.args[0],fsMessage.args[1]);
+			response.success = this->_files.insertFile(path,
+				fsMessage.fileData.size(), response.errorMessage);
+			if (response.success)
+			{
+				response.success = this->_sendFileToSlaves(fsMessage.args[1],
+					fsMessage.args[0], path, fsMessage.fileData, response.errorMessage);
+			}
+		}
+		else
+		{
+			response.success = false;
+			response.errorMessage = "Command not implemented!";
+		}
 	}
-	else if (fsMessage.commandType == FsMessage::MKDIR)
-	{
-		response.success = this->_files.mkdir(fsMessage.args[0],
-			response.errorMessage);
-	}
-	else if (fsMessage.commandType == FsMessage::TOUCH)
-	{
-		response.success = this->_files.touch(fsMessage.args[0],
-			response.errorMessage);
-	}
-
 	/* Evil, but necessary */
 	MasterNodeClient *sender = dynamic_cast<MasterNodeClient*>(this->sender());
 	sender->sendFsMessage(response);

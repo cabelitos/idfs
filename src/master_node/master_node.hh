@@ -17,6 +17,8 @@ private:
 	FsTree _files;
 	QTimer _saveTimeout;
 
+	bool _sendFileToSlaves(const QString &path, const QString &filePath, const QString &fullPath, const QByteArray &fileData, QString &errorMsg);
+
 protected:
 	void incomingConnection(qintptr socketDescriptor);
 

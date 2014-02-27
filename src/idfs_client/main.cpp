@@ -3,12 +3,12 @@
 #include <QCommandLineParser>
 #include <QDataStream>
 #include <QDateTime>
+#include <QFile>
+#include <QFileInfo>
 #include "fs_message.hh"
 
-static FsMessage _message_create(QStringList &args, QString command)
+static bool _message_create(QStringList &args, QString command, FsMessage &msg)
 {
-	FsMessage msg;
-
 	msg.messageType = FsMessage::COMMAND;
 	msg.hostType = FsMessage::CLIENT_APP;
 	msg.timeStamp = QDateTime::currentDateTime();
@@ -19,18 +19,32 @@ static FsMessage _message_create(QStringList &args, QString command)
 		msg.commandType = FsMessage::MKDIR;
 	else if (command == "touch")
 		msg.commandType = FsMessage::TOUCH;
+	else if (command == "push_file")
+	{
+		QString path = args.takeFirst();
+		QFile file(path);
+		if (!file.open(QIODevice::ReadOnly))
+		{
+			qDebug() << "Can not open the file:" << path;
+			return false;
+		}
+		msg.fileData = file.readAll();
+		msg.commandType = FsMessage::PUSH_FILE;
+		QFileInfo info(file);
+		msg.args << info.fileName();
+		file.close();
+	}
 	else
 		msg.commandType = FsMessage::UNKNOWN_COMMAND;
 
-	msg.args = args;
-	return msg;
+	msg.args << args;
+	return true;
 }
 
 int main(int argc, char **argv)
 {
 	QCoreApplication app(argc, argv);
 	QCommandLineParser parser;
-	FsMessage resp;
 
 
 	QCoreApplication::setApplicationName("IDFS client");
@@ -66,17 +80,24 @@ int main(int argc, char **argv)
 	socket.waitForConnected();
 	QDataStream stream(&socket);
 	QString command = args.takeFirst().toLower();
-	stream <<  _message_create(args, command);
-	socket.flush();
-	socket.waitForReadyRead();
-	stream >> resp;
-	if (!resp.success)
-		qDebug() << "Error! - reason:"<< resp.errorMessage;
-	else
+	FsMessage msg;
+	if (_message_create(args, command, msg))
 	{
-		qDebug() << "Success!\n";
-		if (command == "ls")
-			qDebug() << resp.args;
+		stream << fsMessageSizeGet(msg) << msg;
+		socket.flush();
+		socket.waitForReadyRead(-1);
+		FsMessage resp;
+		qint64 size;
+		/* todo, loop until all data is received */
+		stream >> size >> resp;
+		if (!resp.success)
+			qDebug() << "Error! - reason:"<< resp.errorMessage;
+		else
+		{
+			qDebug() << "Success!\n";
+			if (command == "ls")
+				qDebug() << resp.args;
+		}
 	}
 	socket.disconnectFromHost();
 	return 0;

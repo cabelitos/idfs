@@ -1,6 +1,22 @@
 #include "fs_message.hh"
 #include <QDebug>
 
+qint64 fsMessageSizeGet(const FsMessage &fsMessage)
+{
+	qint64 size = 0;
+
+	size += ((sizeof(ushort) * fsMessage.host.length()) + sizeof(quint32));
+	size += ((sizeof(ushort) * fsMessage.errorMessage.length()) + sizeof(quint32));
+	size += (sizeof(quint32) * 3);
+	size += sizeof(qint8); //bool
+	size += (fsMessage.fileData.size() + sizeof(quint32));
+	size += (sizeof(quint32) * 2);
+	foreach (QString s, fsMessage.args)
+		size += ((sizeof(ushort) * s.length()) + sizeof(quint32));
+	size += ((sizeof(quint32) * 2) + sizeof(qint8)); //QDateTime
+	return size;
+}
+
 QDataStream &operator<<(QDataStream &out, const FsMessage &fsMessage)
 {
 	out << fsMessage.host <<

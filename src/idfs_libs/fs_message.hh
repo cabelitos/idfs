@@ -21,28 +21,34 @@ struct Q_CORE_EXPORT FsMessage {
 		UNKNOWN_COMMAND = 0,
 		LS,
 		MKDIR,
-		TOUCH
+		TOUCH,
+		PUSH_FILE
 		/* TODO put commands here */
 	};
 
 	enum FsMessageType {
 		UNKNOWN_MESSAGE = 0,
 		COMMAND,
+		INTRODUCTION,
+		STORE_FILE,
 		REPLY
 	};
 
 	QString host;
-	FsMessageHostType hostType;
-	QDateTime timeStamp;
 
+	FsMessageHostType hostType;
 	FsMessageType messageType;
 	FsCommandType commandType;
+
+	QDateTime timeStamp;
 	QStringList args;
 	QByteArray fileData;
 
 	bool success;
 	QString errorMessage; /* In case of error, we can specify something here. */
 };
+
+Q_CORE_EXPORT qint64 fsMessageSizeGet(const FsMessage &fsMessage);
 
 Q_CORE_EXPORT QDataStream &operator<<(QDataStream &out,
 	const FsMessage &fsMessage);

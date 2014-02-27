@@ -86,6 +86,13 @@ bool FsTree::_fileExistInDir(const QString &path, const QString &name,
 	return false;
 }
 
+QString FsTree::createPath(const QString &fileName, const QString &basePath)
+{
+	if (basePath == FsTree::DIR_SEPARATOR)
+		return QString(basePath + fileName);
+	return QString(basePath + FsTree::DIR_SEPARATOR + fileName);
+}
+
 bool FsTree::insert(const QString &path, const FileInfo &fileInfo)
 {
 	FileInfo outInfo;
@@ -122,7 +129,8 @@ bool FsTree::ls(const QString &path, QStringList &files)
 	return true;
 }
 
-bool FsTree::touch(const QString &path, QString &errorMsg)
+bool FsTree::insertFile(const QString &path, qint64 fileSize,
+	QString &errorMsg)
 {
 	QStringList splited = path.split(FsTree::DIR_SEPARATOR,
 		QString::SkipEmptyParts);
@@ -166,11 +174,30 @@ bool FsTree::touch(const QString &path, QString &errorMsg)
 	newFile.fileName = touchedFile;
 	newFile.isDir = false;
 	newFile.cTime = QDateTime::currentDateTime();
-	newFile.size = 0;
+	newFile.size = fileSize;
 	this->insert(last, newFile);
-	last += FsTree::DIR_SEPARATOR + touchedFile;
+	if (last != FsTree::DIR_SEPARATOR)
+		last += FsTree::DIR_SEPARATOR + touchedFile;
+	else
+		last += touchedFile;
 	/* Include itself, so it can be found if the user types ls /path/to/touch/file/touchedfile*/
 	this->insert(last, newFile);
+	return true;
+}
+
+bool FsTree::addChunckToFileInfo(const QString &path,
+	const QString &slaveName, const QString &filePart)
+{
+	QList<FileInfo> infos = this->values(path);
+
+	if (infos.isEmpty() || infos.size() > 1)
+		return false;
+
+	/* Oh god this is ugly as hell*/
+	FileInfo newInfo = infos[0];
+	newInfo.chunksLocation.append(qMakePair(slaveName, filePart));
+	this->remove(path);
+	this->insert(path, newInfo);
 	return true;
 }
 
