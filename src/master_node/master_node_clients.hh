@@ -6,9 +6,10 @@
 #include <QDateTime>
 #include <QList>
 #include "fs_message.hh"
+#include "idfs_socket.hh"
 
 
-class MasterNodeClient : public QTcpSocket {
+class MasterNodeClient : public IdfsSocket {
 	Q_OBJECT
 
 private:
@@ -22,17 +23,15 @@ private:
 public:
 	MasterNodeClient(QObject *parent = 0);
 	virtual ~MasterNodeClient();
-
-	void sendFsMessage(const FsMessage &fsMessage);
 	bool isSlave();
 	const QString &getName() const;
 
 	void pushFilePartMsg(const FsMessage &fsMessage);
 
 signals:
-	void newMessage(FsMessage fsMessage);
+	void masterNodeMsg(FsMessage fsMessage);
 
 private slots:
-	void canRead();
 	void timeoutWrite();
+	void socketIdfsNewMessage(FsMessage msg);
 };

@@ -1,6 +1,6 @@
 TEMPLATE = lib
-QT += core
+QT += core network
 CONFIG += staticlib
-HEADERS += $$PWD/fs_message.hh
-SOURCES += $$PWD/fs_message.cpp
+HEADERS += $$PWD/idfs_socket.hh $$PWD/fs_message.hh
+SOURCES += $$PWD/idfs_socket.cpp $$PWD/fs_message.cpp
 TARGET = idfs_libs

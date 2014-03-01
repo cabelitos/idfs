@@ -71,7 +71,7 @@ void MasterNode::incomingConnection(qintptr socketDescriptor)
 		qDebug() << "New client!";
 		connect(client, SIGNAL(disconnected()), this,
 			SLOT(_clientDisconnected()));
-		connect(client, SIGNAL(newMessage(FsMessage)), this,
+		connect(client, SIGNAL(masterNodeMsg(FsMessage)), this,
 			SLOT(_clientMessage(FsMessage)));
 		this->_clients.append(client);
 	}

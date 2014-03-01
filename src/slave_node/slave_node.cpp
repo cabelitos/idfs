@@ -9,11 +9,12 @@
 
 #define SLAVE_DIR "data"
 
-SlaveNode::SlaveNode(QObject *parent) : QTcpSocket(parent)
+SlaveNode::SlaveNode(QObject *parent) : IdfsSocket(parent)
 {
 	connect(this, SIGNAL(connected()), this, SLOT(ready()));
 	connect(this, SIGNAL(disconnected()), this, SLOT(masterDown()));
-	connect(this, SIGNAL(readyRead()), this, SLOT(canRead()));
+	connect(this, SIGNAL(newMessage(FsMessage)), this,
+		SLOT(processMessage(FsMessage)));
 	QString aux = QStandardPaths::writableLocation(
 		QStandardPaths::DataLocation);
 	qDebug() << aux;
@@ -28,32 +29,8 @@ SlaveNode::~SlaveNode()
 	this->disconnectFromHost();
 }
 
-void SlaveNode::_sendMessage(const FsMessage &fsMessage)
+void SlaveNode::processMessage(FsMessage msg)
 {
-	QDataStream stream(this);
-	stream << fsMessageSizeGet(fsMessage) << fsMessage;
-	this->flush();
-}
-
-void SlaveNode::canRead()
-{
-	QDataStream stream(this);
-	static qint64 fsMessageSize = 0;
-
-	if (!fsMessageSize)
-	{
-		if (this->bytesAvailable() < (int)sizeof(fsMessageSize))
-			return;
-		stream >> fsMessageSize;
-	}
-
-	if (this->bytesAvailable() < fsMessageSize)
-		return;
-
-	FsMessage msg;
-	stream >> msg;
-	fsMessageSize = 0;
-
 	if (msg.messageType == FsMessage::REPLY)
 	{
 		if (!msg.success)
@@ -102,7 +79,7 @@ void SlaveNode::canRead()
 send:
 		resp.hostType = FsMessage::SLAVE_NODE;
 		resp.messageType =  FsMessage::REPLY;
-		this->_sendMessage(resp);
+		this->sendFsMessage(resp);
 	}
 
 }
@@ -123,7 +100,7 @@ void SlaveNode::ready()
 
 	msg.hostType = FsMessage::SLAVE_NODE;
 	msg.messageType =  FsMessage::INTRODUCTION;
-	this->_sendMessage(msg);
+	this->sendFsMessage(msg);
 }
 
 void SlaveNode::masterDown()

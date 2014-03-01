@@ -2,17 +2,15 @@
 
 #include <QTcpSocket>
 #include "fs_message.hh"
+#include "idfs_socket.hh"
 
-class SlaveNode : public QTcpSocket {
+class SlaveNode : public IdfsSocket {
 	Q_OBJECT
 
 private slots:
 	void ready();
 	void masterDown();
-	void canRead();
-
-private:
-	void _sendMessage(const FsMessage &fsMessage);
+	void processMessage(FsMessage msg);
 
 public:
 	SlaveNode(QObject *parent = 0);

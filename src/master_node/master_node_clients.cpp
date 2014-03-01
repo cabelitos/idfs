@@ -3,20 +3,14 @@
 #include <QTimer>
 
 MasterNodeClient::MasterNodeClient(QObject *parent) :
-	QTcpSocket (parent), _isSlave(false), _timerStarted(false)
+	IdfsSocket (parent), _isSlave(false), _timerStarted(false)
 {
-	connect(this, SIGNAL(readyRead()), this, SLOT(canRead()));
+	connect(this, SIGNAL(newMessage(FsMessage)), this,
+		SLOT(socketIdfsNewMessage(FsMessage)));
 }
 
 MasterNodeClient::~MasterNodeClient()
 {
-}
-
-void MasterNodeClient::sendFsMessage(const FsMessage &fsMessage)
-{
-	QDataStream stream(this);
-	stream << fsMessageSizeGet(fsMessage) << fsMessage;
-	this->flush();
 }
 
 bool MasterNodeClient::isSlave()
@@ -52,26 +46,8 @@ const QString &MasterNodeClient::getName() const
 	return this->_name;
 }
 
-void MasterNodeClient::canRead()
+void MasterNodeClient::socketIdfsNewMessage(FsMessage msg)
 {
-	static qint64 fsMessageSize = 0;
-	QDataStream stream(this);
-
-	if (!fsMessageSize)
-	{
-		if (this->bytesAvailable() < (int)sizeof(fsMessageSize))
-			return;
-
-		stream >> fsMessageSize;
-	}
-
-	if (this->bytesAvailable() < fsMessageSize)
-		return;
-
-	FsMessage msg;
-	stream >> msg;
-	fsMessageSize = 0;
-
 	if (msg.messageType == FsMessage::REPLY)
 	{
 		this->_sendFilePart();
@@ -88,6 +64,6 @@ void MasterNodeClient::canRead()
 		this->sendFsMessage(response);
 	}
 	else
-		emit this->newMessage(msg);
+		emit this->masterNodeMsg(msg);
 }
 
