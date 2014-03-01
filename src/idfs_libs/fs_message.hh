@@ -31,7 +31,8 @@ struct Q_CORE_EXPORT FsMessage {
 		COMMAND,
 		INTRODUCTION,
 		STORE_FILE,
-		REPLY
+		REPLY,
+		PROGRESS
 	};
 
 	QString host;

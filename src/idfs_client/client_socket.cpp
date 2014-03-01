@@ -69,27 +69,44 @@ void ClientSocket::_createMessageAndSend()
 
 void ClientSocket::processMessage(FsMessage msg)
 {
-	if (msg.messageType != FsMessage::REPLY)
+	if (msg.messageType != FsMessage::REPLY &&
+		msg.messageType != FsMessage::PROGRESS)
 	{
-		qDebug() << "Message Type not correct %d" << (int)msg.messageType;
+		qDebug() << "Message Type not correct:" << (int)msg.messageType;
 		return;
 	}
 	else if (msg.hostType != FsMessage::MASTER_NODE)
 	{
-		qDebug() << "We are not supposed to receive messages from %d" << (int)msg.hostType;
+		qDebug() << "We are not supposed to receive messages from:" << (int)msg.hostType;
 		return;
 	}
 
-	if (!msg.success)
-		qDebug() << "Error:" << msg.errorMessage;
+	if (msg.messageType == FsMessage::REPLY)
+	{
+		if (!msg.success)
+			qDebug() << "Error:" << msg.errorMessage;
+		else
+		{
+			qDebug() << "Success";
+			if (this->_command == "ls")
+				qDebug() << msg.args;
+		}
+
+		if (this->_command != "push_file")
+			this->disconnectFromHost();
+	}
 	else
 	{
-		qDebug() << "Success";
-		if (this->_command == "ls")
-			qDebug() << msg.args;
+		qDebug() << "Percent:" << msg.args[0];
+		FsMessage resp;
+		resp.messageType = FsMessage::REPLY;
+		resp.hostType = FsMessage::CLIENT_APP;
+		resp.timeStamp = QDateTime::currentDateTime();
+		resp.success = true;
+		this->sendFsMessage(resp);
+		if (msg.args[0].toDouble() == 100.00)
+			this->disconnectFromHost();
 	}
-
-	this->disconnectFromHost();
 }
 
 void ClientSocket::ready()

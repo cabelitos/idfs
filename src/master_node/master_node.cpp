@@ -73,8 +73,25 @@ void MasterNode::incomingConnection(qintptr socketDescriptor)
 			SLOT(_clientDisconnected()));
 		connect(client, SIGNAL(masterNodeMsg(FsMessage)), this,
 			SLOT(_clientMessage(FsMessage)));
+		connect(client, SIGNAL(filePartSent(double, QString)), this,
+			SLOT(_filePartSent(double, QString)));
 		this->_clients.append(client);
 	}
+}
+
+void MasterNode::_filePartSent(double percent, QString partName)
+{
+	FsMessage response;
+
+	response.messageType =	FsMessage::PROGRESS;
+	response.hostType =	 FsMessage::MASTER_NODE;
+	response.timeStamp = QDateTime::currentDateTime();
+	response.success = true;
+	response.args << QString::number(percent);
+	if (this->_fileProgressReport.contains(partName))
+		this->_fileProgressReport.take(partName)->pushFileMsg(response);
+	else
+		qDebug() << partName << " not present in _fileProgressReport";
 }
 
 void MasterNode::_clientDisconnected()
@@ -96,6 +113,7 @@ void MasterNode::_clientDisconnected()
 
 bool MasterNode::_sendFileToSlaves(const QString &path,
 	const QString &fileName, const QString &fullPath,
+	MasterNodeClient *requester,
 	const QByteArray &fileData, QString &errorMsg)
 {
 	QList<MasterNodeClient *> slaves;
@@ -138,11 +156,12 @@ bool MasterNode::_sendFileToSlaves(const QString &path,
 		msg.args << path;
 		msg.args << partName;
 		slave = it.next();
-		slave->pushFilePartMsg(msg);
+		slave->pushFileMsg(msg);
 		this->_files.addChunckToFileInfo(fullPath, slave->getName(), path+partName);
 		if (!it.hasNext())
 			it.toFront();
 		pos += read;
+		this->_fileProgressReport.insert(partName, requester);
 	}
 	return true;
 }
@@ -151,6 +170,7 @@ void MasterNode::_clientMessage(FsMessage fsMessage)
 {
 	qDebug() << "New message!";
 	FsMessage response;
+	MasterNodeClient *sender = dynamic_cast<MasterNodeClient*>(this->sender());
 
 	response.messageType =	FsMessage::REPLY;
 	response.hostType =	 FsMessage::MASTER_NODE;
@@ -190,7 +210,8 @@ void MasterNode::_clientMessage(FsMessage fsMessage)
 			if (response.success)
 			{
 				response.success = this->_sendFileToSlaves(fsMessage.args[1],
-					fsMessage.args[0], path, fsMessage.fileData, response.errorMessage);
+					fsMessage.args[0], path, sender, fsMessage.fileData,
+					response.errorMessage);
 			}
 		}
 		else
@@ -200,7 +221,6 @@ void MasterNode::_clientMessage(FsMessage fsMessage)
 		}
 	}
 	/* Evil, but necessary */
-	MasterNodeClient *sender = dynamic_cast<MasterNodeClient*>(this->sender());
 	sender->sendFsMessage(response);
 }
 

@@ -16,8 +16,11 @@ private:
 	QList<MasterNodeClient *> _clients;
 	FsTree _files;
 	QTimer _saveTimeout;
+	QHash<QString, MasterNodeClient*> _fileProgressReport;
 
-	bool _sendFileToSlaves(const QString &path, const QString &filePath, const QString &fullPath, const QByteArray &fileData, QString &errorMsg);
+	bool _sendFileToSlaves(const QString &path, const QString &filePath,
+		const QString &fullPath,  MasterNodeClient *requester,
+		const QByteArray &fileData, QString &errorMsg);
 
 protected:
 	void incomingConnection(qintptr socketDescriptor);
@@ -26,6 +29,7 @@ private slots:
 	void _saveTree();
 	void _clientDisconnected();
 	void _clientMessage(FsMessage fsMessage);
+	void _filePartSent(double percent, QString partName);
 
 public:
 	MasterNode(QObject *parent = 0);

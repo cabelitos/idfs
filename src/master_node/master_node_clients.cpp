@@ -3,7 +3,8 @@
 #include <QTimer>
 
 MasterNodeClient::MasterNodeClient(QObject *parent) :
-	IdfsSocket (parent), _isSlave(false), _timerStarted(false)
+	IdfsSocket (parent), _isSlave(false), _timerStarted(false),
+	_partCount(0), _totalParts(0)
 {
 	connect(this, SIGNAL(newMessage(FsMessage)), this,
 		SLOT(socketIdfsNewMessage(FsMessage)));
@@ -21,22 +22,35 @@ bool MasterNodeClient::isSlave()
 void MasterNodeClient::_sendFilePart()
 {
 	if (!this->_filePartsMsg.isEmpty())
-		this->sendFsMessage(this->_filePartsMsg.takeFirst());
+	{
+		FsMessage msg = this->_filePartsMsg.takeFirst();
+		this->sendFsMessage(msg);
+		if (msg.messageType == FsMessage::STORE_FILE)
+		{
+			double percent = ((++this->_partCount * 100.00) / this->_totalParts);
+			emit this->filePartSent(percent, msg.args[1]);
+		}
+	}
+	else
+	{
+		this->_partCount = 0;
+		this->_totalParts = 0;
+	}
 }
 
 void MasterNodeClient::timeoutWrite()
 {
 	this->_timerStarted = false;
+	this->_totalParts = this->_filePartsMsg.size();
 	this->_sendFilePart();
 }
 
-void MasterNodeClient::pushFilePartMsg(const FsMessage &fsMessage)
+void MasterNodeClient::pushFileMsg(const FsMessage &fsMessage)
 {
 	if (!this->_timerStarted)
 	{
 		this->_timerStarted = true;
-		/* Start when you can. */
-		QTimer::singleShot(1, this, SLOT(timeoutWrite()));
+		QTimer::singleShot(1000, this, SLOT(_timeoutWrite()));
 	}
 	this->_filePartsMsg.append(fsMessage);
 }

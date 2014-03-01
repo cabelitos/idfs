@@ -16,6 +16,8 @@ private:
 	QString _name;
 	bool _isSlave;
 	bool _timerStarted;
+	int _partCount;
+	int _totalParts;
 	QList<FsMessage> _filePartsMsg;
 
 	void _sendFilePart();
@@ -26,10 +28,14 @@ public:
 	bool isSlave();
 	const QString &getName() const;
 
-	void pushFilePartMsg(const FsMessage &fsMessage);
+	/* use this function when a lot of messeges will be sent in sequence.
+		This function will manage to do not overflow the client's buffer.
+	*/
+	void pushFileMsg(const FsMessage &fsMessage);
 
 signals:
 	void masterNodeMsg(FsMessage fsMessage);
+	void filePartSent(double percent, QString partName);
 
 private slots:
 	void timeoutWrite();
