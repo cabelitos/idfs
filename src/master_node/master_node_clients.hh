@@ -38,6 +38,6 @@ signals:
 	void filePartSent(double percent, QString partName);
 
 private slots:
-	void timeoutWrite();
-	void socketIdfsNewMessage(FsMessage msg);
+	void _timeoutWrite();
+	void _socketIdfsNewMessage(FsMessage msg);
 };

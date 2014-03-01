@@ -23,7 +23,7 @@ public:
 	void sendCommand(QStringList args);
 
 private slots:
-	void processMessage(FsMessage msg);
-	void ready();
-	void goodbye();
+	void _processMessage(FsMessage msg);
+	void _ready();
+	void _goodbye();
 };

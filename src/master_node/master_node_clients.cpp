@@ -7,7 +7,7 @@ MasterNodeClient::MasterNodeClient(QObject *parent) :
 	_partCount(0), _totalParts(0)
 {
 	connect(this, SIGNAL(newMessage(FsMessage)), this,
-		SLOT(socketIdfsNewMessage(FsMessage)));
+		SLOT(_socketIdfsNewMessage(FsMessage)));
 }
 
 MasterNodeClient::~MasterNodeClient()
@@ -38,7 +38,7 @@ void MasterNodeClient::_sendFilePart()
 	}
 }
 
-void MasterNodeClient::timeoutWrite()
+void MasterNodeClient::_timeoutWrite()
 {
 	this->_timerStarted = false;
 	this->_totalParts = this->_filePartsMsg.size();
@@ -60,7 +60,7 @@ const QString &MasterNodeClient::getName() const
 	return this->_name;
 }
 
-void MasterNodeClient::socketIdfsNewMessage(FsMessage msg)
+void MasterNodeClient::_socketIdfsNewMessage(FsMessage msg)
 {
 	if (msg.messageType == FsMessage::REPLY)
 	{

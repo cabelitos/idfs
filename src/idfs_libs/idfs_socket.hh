@@ -8,7 +8,7 @@ class Q_CORE_EXPORT IdfsSocket : public QTcpSocket {
 	Q_OBJECT
 
 private slots:
-	void canRead();
+	void _canRead();
 
 public:
 	IdfsSocket(QObject *parent = 0);

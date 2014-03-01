@@ -8,9 +8,9 @@
 ClientSocket::ClientSocket(QObject *parent) : IdfsSocket(parent)
 {
 	connect(this, SIGNAL(newMessage(FsMessage)), this,
-		SLOT(processMessage(FsMessage)));
-	connect(this, SIGNAL(connected()), this, SLOT(ready()));
-	connect(this, SIGNAL(disconnected()), this, SLOT(goodbye()));
+		SLOT(_processMessage(FsMessage)));
+	connect(this, SIGNAL(connected()), this, SLOT(_ready()));
+	connect(this, SIGNAL(disconnected()), this, SLOT(_goodbye()));
 }
 
 ClientSocket::~ClientSocket()
@@ -67,7 +67,7 @@ void ClientSocket::_createMessageAndSend()
 	this->sendFsMessage(msg);
 }
 
-void ClientSocket::processMessage(FsMessage msg)
+void ClientSocket::_processMessage(FsMessage msg)
 {
 	if (msg.messageType != FsMessage::REPLY &&
 		msg.messageType != FsMessage::PROGRESS)
@@ -109,13 +109,13 @@ void ClientSocket::processMessage(FsMessage msg)
 	}
 }
 
-void ClientSocket::ready()
+void ClientSocket::_ready()
 {
 	qDebug() << "Sending command";
 	this->_createMessageAndSend();
 }
 
-void ClientSocket::goodbye()
+void ClientSocket::_goodbye()
 {
 	qDebug() << "Disconnected from master node!";
 	QCoreApplication::exit();

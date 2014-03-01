@@ -4,7 +4,7 @@
 
 IdfsSocket::IdfsSocket(QObject *parent) : QTcpSocket(parent)
 {
-	connect(this, SIGNAL(readyRead()), this, SLOT(canRead()));
+	connect(this, SIGNAL(readyRead()), this, SLOT(_canRead()));
 }
 
 IdfsSocket::~IdfsSocket()
@@ -18,7 +18,7 @@ void IdfsSocket::sendFsMessage(const FsMessage &msg)
 	this->flush();
 }
 
-void IdfsSocket::canRead()
+void IdfsSocket::_canRead()
 {
 	static qint64 fsMessageSize = 0;
 	QDataStream stream(this);
