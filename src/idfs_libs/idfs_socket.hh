@@ -2,9 +2,10 @@
 
 #include <QTcpSocket>
 #include <QObject>
+#include <QtGlobal>
 #include "fs_message.hh"
 
-class Q_CORE_EXPORT IdfsSocket : public QTcpSocket {
+class Q_DECL_EXPORT IdfsSocket : public QTcpSocket {
 	Q_OBJECT
 
 private slots:
