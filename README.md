@@ -29,6 +29,9 @@ The user interface with the master node.
 When sending a file to the IDFS the master node will split the whole file in chunks and
 distribute these chunks across the slave nodes.
 
+The image below exemplifies what happens when you send a file to the IDFS.
+![alt text](https://raw.github.com/cabelitos/idfs/master/overview.jpg "IDFS overview")
+
 
 Setup
 ----------
