@@ -12,10 +12,10 @@
 
 SlaveNode::SlaveNode(QObject *parent) : IdfsSocket(parent), _fileLocationsDirty(false)
 {
-	connect(this, SIGNAL(connected()), this, SLOT(ready()));
-	connect(this, SIGNAL(disconnected()), this, SLOT(masterDown()));
+	connect(this, SIGNAL(connected()), this, SLOT(_ready()));
+	connect(this, SIGNAL(disconnected()), this, SLOT(_masterDown()));
 	connect(this, SIGNAL(newMessage(FsMessage)), this,
-		SLOT(processMessage(FsMessage)));
+		SLOT(_processMessage(FsMessage)));
 	connect(&this->_saveTimeout, SIGNAL(timeout()), this, SLOT(_timeout()));
 
 	QString aux = QStandardPaths::writableLocation(
@@ -79,7 +79,7 @@ void SlaveNode::_timeout()
 	this->_fileLocationsDiskOp();
 }
 
-void SlaveNode::processMessage(FsMessage msg)
+void SlaveNode::_processMessage(FsMessage msg)
 {
 	if (msg.messageType == FsMessage::FETCH_FILE)
 	{
@@ -157,7 +157,7 @@ send:
 
 }
 
-void SlaveNode::ready()
+void SlaveNode::_ready()
 {
 	FsMessage msg;
 
@@ -176,7 +176,7 @@ void SlaveNode::ready()
 	this->sendFsMessage(msg);
 }
 
-void SlaveNode::masterDown()
+void SlaveNode::_masterDown()
 {
 	qDebug() << "Disconnected from master node!";
 	QCoreApplication::exit();

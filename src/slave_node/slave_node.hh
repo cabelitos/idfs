@@ -17,9 +17,9 @@ private:
 	void _fileLocationsDiskOp(bool read = false);
 
 private slots:
-	void ready();
-	void masterDown();
-	void processMessage(FsMessage msg);
+	void _ready();
+	void _masterDown();
+	void _processMessage(FsMessage msg);
 	void _timeout();
 
 public:
