@@ -4,7 +4,7 @@ IDFS
 IDFS is a distributed file system inspired by Hadoop (in a very small scale).
 
 I haven't planned to make this code public, so I puked tons of code during the development.
-The IDFS can still needs lots of improvement.
+The IDFS still needs lots of improvement.
 
 
 How it works?
@@ -36,21 +36,21 @@ The image below exemplifies what happens when you send a file to the IDFS.
 Setup
 ----------
 
-After compiling it, launch the master node.
+After compiling it, launch the master node:
 ```shell
 ./master_node -p 8554
 ```
 
 Where -p is the port
 
-Than connect how many slaves node you want, like this:
+Than connect how many slaves nodes you want like this:
 ```shell
 ./slave_node -a 200.2.2.2 -p 8554
 ```
 
 Where -a is the master_node IP and -p is the port.
 
-Now start making requests via the idfs_client
+Now start making requests via the idfs_client:
 ```shell
 ./idfs_client -a 200.2.2.2 -p 8554 mkdir /myRemoteMusic
 ./idfs_client -a 200.2.2.2 -p 8554 push_file /myLocalMusicDir/music.mp3 /myMusic
@@ -88,7 +88,7 @@ idfs_client push_file /My/local/file /my/remote/file/dir
 
 Fetching the file that was pushed:
 ```shell
-idfs_client push_file /my/remote/file/dir /a/local/dir
+idfs_client get_file /my/remote/file/dir /a/local/dir
 ```
 
 What I need to compile it?
