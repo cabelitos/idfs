@@ -8,19 +8,32 @@
 #include "master_node_clients.hh"
 #include "fs_message.hh"
 #include <QTimer>
+#include <QByteArray>
+#include <QPair>
 
 class MasterNode: public QTcpServer {
 	Q_OBJECT
 
 private:
+	typedef struct _FetchFileInfo {
+		MasterNodeClient *requester;
+		FileInfo fileInfo;
+		QList<QPair<int, QByteArray> > parts;
+		qint64 total;
+	} FetchFileInfo;
 	QList<MasterNodeClient *> _clients;
 	FsTree _files;
 	QTimer _saveTimeout;
 	QHash<QString, MasterNodeClient*> _fileProgressReport;
+	QHash<QString, FetchFileInfo*> _fetchFileInfos;
 
 	bool _sendFileToSlaves(const QString &path, const QString &filePath,
 		const QString &fullPath,  MasterNodeClient *requester,
 		const QByteArray &fileData, QString &errorMsg);
+
+	bool _fetchFileParts(const FileInfo &info, QString &errorMsg);
+	void sendFileToClient(FetchFileInfo *info);
+	QList<MasterNodeClient*> _slavesGet();
 
 protected:
 	void incomingConnection(qintptr socketDescriptor);

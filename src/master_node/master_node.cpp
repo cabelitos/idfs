@@ -8,6 +8,7 @@
 #include <QDataStream>
 #include <QStandardPaths>
 #include <QDir>
+#include <QtAlgorithms>
 
 #define FS_TREE_FILE_NAME "fs_tree.bin"
 #define TIMEOUT_5_SEC (5000)
@@ -36,6 +37,7 @@ MasterNode::MasterNode(QObject *parent) : QTcpServer(parent)
 MasterNode::~MasterNode()
 {
 	this->_saveTree();
+	qDeleteAll(this->_fetchFileInfos);
 }
 
 void MasterNode::_saveTree()
@@ -111,10 +113,7 @@ void MasterNode::_clientDisconnected()
 	}
 }
 
-bool MasterNode::_sendFileToSlaves(const QString &path,
-	const QString &fileName, const QString &fullPath,
-	MasterNodeClient *requester,
-	const QByteArray &fileData, QString &errorMsg)
+QList<MasterNodeClient*> MasterNode::_slavesGet()
 {
 	QList<MasterNodeClient *> slaves;
 
@@ -123,7 +122,15 @@ bool MasterNode::_sendFileToSlaves(const QString &path,
 		if (client->isSlave())
 			slaves.append(client);
 	}
+	return slaves;
+}
 
+bool MasterNode::_sendFileToSlaves(const QString &path,
+	const QString &fileName, const QString &fullPath,
+	MasterNodeClient *requester,
+	const QByteArray &fileData, QString &errorMsg)
+{
+	QList<MasterNodeClient*> slaves = this->_slavesGet();
 	if (slaves.isEmpty())
 	{
 		errorMsg = "There are no slave nodes connected!";
@@ -157,13 +164,79 @@ bool MasterNode::_sendFileToSlaves(const QString &path,
 		msg.args << partName;
 		slave = it.next();
 		slave->pushFileMsg(msg);
-		this->_files.addChunckToFileInfo(fullPath, slave->getName(), path+partName);
+		this->_files.addChunckToFileInfo(fullPath, slave->getName(), partName);
 		if (!it.hasNext())
 			it.toFront();
 		pos += read;
 		this->_fileProgressReport.insert(partName, requester);
 	}
 	return true;
+}
+
+bool MasterNode::_fetchFileParts(const FileInfo &info, QString &errorMsg)
+{
+	QList<MasterNodeClient*> slaves = this->_slavesGet();
+
+	if (slaves.isEmpty())
+	{
+		errorMsg = "There are no slave nodes connected!";
+		return false;
+	}
+
+	QPair<QString,QString> p;
+
+	foreach (p, info.chunksLocation)
+	{
+		MasterNodeClient *found = 0;
+		foreach(MasterNodeClient *slave, slaves)
+		{
+			if (slave->getName() == p.first)
+			{
+				found = slave;
+				break;
+			}
+		}
+
+		if (!found)
+		{
+			errorMsg = "Slave:" + p.first + " not found!";
+			foreach(MasterNodeClient *slave, slaves)
+				slave->popFileMsgs();
+			return false;
+		}
+
+		FsMessage msg;
+		msg.messageType =	FsMessage::FETCH_FILE;
+		msg.hostType =	 FsMessage::MASTER_NODE;
+		msg.timeStamp = QDateTime::currentDateTime();
+		msg.args << p.second;
+		found->pushFileMsg(msg);
+	}
+
+	return true;
+}
+
+static bool _filePartsSort(const QPair<int, QByteArray> &p1,
+	const QPair<int, QByteArray> &p2)
+{
+	return p1.first < p2.first;
+}
+
+void MasterNode::sendFileToClient(FetchFileInfo *info)
+{
+	QByteArray final;
+	QPair<int,QByteArray> p;
+
+	foreach (p, info->parts)
+		final.append(p.second);
+
+	FsMessage msg;
+	msg.hostType =	 FsMessage::MASTER_NODE;
+	msg.timeStamp = QDateTime::currentDateTime();
+	msg.messageType =	FsMessage::FILE;
+	msg.fileData = final;
+	msg.args << info->fileInfo.fileName;
+	info->requester->sendFsMessage(msg);
 }
 
 void MasterNode::_clientMessage(FsMessage fsMessage)
@@ -175,12 +248,32 @@ void MasterNode::_clientMessage(FsMessage fsMessage)
 	response.messageType =	FsMessage::REPLY;
 	response.hostType =	 FsMessage::MASTER_NODE;
 	response.timeStamp = QDateTime::currentDateTime();
-	if (fsMessage.messageType != FsMessage::COMMAND)
+
+	if (fsMessage.hostType == FsMessage::SLAVE_NODE &&
+		fsMessage.messageType == FsMessage::FILE_PART)
+	{
+		FetchFileInfo *fetchInfo = this->_fetchFileInfos[fsMessage.args[0]];
+		fetchInfo->parts << qMakePair(fsMessage.args[1].toInt(),
+			fsMessage.fileData);
+		fetchInfo->total += fsMessage.fileData.size();
+		qDebug() << fetchInfo->total << "-" << fetchInfo->fileInfo.size;
+		if (fetchInfo->total == fetchInfo->fileInfo.size)
+		{
+			qSort(fetchInfo->parts.begin(), fetchInfo->parts.end(),
+				_filePartsSort);
+			this->sendFileToClient(fetchInfo);
+			this->_fetchFileInfos.remove(fsMessage.args[0]);
+			delete fetchInfo;
+		}
+	}
+	else if (fsMessage.hostType == FsMessage::CLIENT_APP &&
+			fsMessage.messageType != FsMessage::COMMAND)
 	{
 		response.success = false;
 		response.errorMessage = "Message must be a command!";
 	}
-	else
+	else if (fsMessage.hostType == FsMessage::CLIENT_APP &&
+			fsMessage.messageType == FsMessage::COMMAND)
 	{
 		if (fsMessage.commandType == FsMessage::UNKNOWN_COMMAND)
 		{
@@ -212,15 +305,39 @@ void MasterNode::_clientMessage(FsMessage fsMessage)
 				response.success = this->_sendFileToSlaves(fsMessage.args[1],
 					fsMessage.args[0], path, sender, fsMessage.fileData,
 					response.errorMessage);
+				/* TODO: If failed remove from this->_files !*/
+			}
+		}
+		else if (fsMessage.commandType == FsMessage::GET_FILE)
+		{
+			QList <FileInfo> infos = this->_files.values(fsMessage.args[0]);
+			if (infos.isEmpty() || infos.size() > 1)
+			{
+				response.success = false;
+				response.errorMessage = "No mathing file!";
+			}
+			else
+			{
+				response.success =
+					this->_fetchFileParts(infos[0], response.errorMessage);
+
+				if (response.success)
+				{
+					FetchFileInfo *fetchInfo = new FetchFileInfo;
+					fetchInfo->fileInfo = infos[0];
+					fetchInfo->requester = sender;
+					fetchInfo->total = 0;
+					this->_fetchFileInfos.insert(infos[0].fileName, fetchInfo);
+					qDebug() << infos[0].fileName;
+				}
 			}
 		}
 		else
 		{
 			response.success = false;
-			response.errorMessage = "Command not implemented!";
+			response.errorMessage = "Error!";
 		}
+		sender->sendFsMessage(response);
 	}
-	/* Evil, but necessary */
-	sender->sendFsMessage(response);
 }
 

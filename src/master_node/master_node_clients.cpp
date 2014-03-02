@@ -60,11 +60,19 @@ const QString &MasterNodeClient::getName() const
 	return this->_name;
 }
 
+void MasterNodeClient::popFileMsgs()
+{
+	this->_filePartsMsg.clear();
+}
+
 void MasterNodeClient::_socketIdfsNewMessage(FsMessage msg)
 {
 	if (msg.messageType == FsMessage::REPLY)
 	{
 		this->_sendFilePart();
+		/* TODO - Notify the master node if an error happend, so it can erase the file
+			from FsTree and the idfs_client can know that something has happened.
+		*/
 	}
 	else if (msg.messageType == FsMessage::INTRODUCTION)
 	{
@@ -76,6 +84,11 @@ void MasterNodeClient::_socketIdfsNewMessage(FsMessage msg)
 		response.timeStamp = QDateTime::currentDateTime();
 		response.success = true;
 		this->sendFsMessage(response);
+	}
+	else if (msg.messageType == FsMessage::FILE_PART)
+	{
+		emit this->masterNodeMsg(msg);
+		this->_sendFilePart();
 	}
 	else
 		emit this->masterNodeMsg(msg);

@@ -22,7 +22,8 @@ struct Q_CORE_EXPORT FsMessage {
 		LS,
 		MKDIR,
 		TOUCH,
-		PUSH_FILE
+		PUSH_FILE,
+		GET_FILE
 		/* TODO put commands here */
 	};
 
@@ -31,8 +32,11 @@ struct Q_CORE_EXPORT FsMessage {
 		COMMAND,
 		INTRODUCTION,
 		STORE_FILE,
+		FILE_PART,
+		FILE,
 		REPLY,
-		PROGRESS
+		PROGRESS,
+		FETCH_FILE
 	};
 
 	QString host;

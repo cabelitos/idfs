@@ -32,6 +32,7 @@ public:
 		This function will manage to do not overflow the client's buffer.
 	*/
 	void pushFileMsg(const FsMessage &fsMessage);
+	void popFileMsgs();
 
 signals:
 	void masterNodeMsg(FsMessage fsMessage);

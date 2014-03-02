@@ -4,6 +4,7 @@
 #include <QDateTime>
 #include <QFile>
 #include <QFileInfo>
+#include <QDir>
 
 ClientSocket::ClientSocket(QObject *parent) : IdfsSocket(parent)
 {
@@ -60,17 +61,23 @@ void ClientSocket::_createMessageAndSend()
 		msg.args << info.fileName();
 		file.close();
 	}
+	else if (this->_command == "get_file")
+		msg.commandType = FsMessage::GET_FILE;
 	else
 		msg.commandType = FsMessage::UNKNOWN_COMMAND;
 
-	msg.args << this->_commandArgs;
+	if (msg.commandType == FsMessage::GET_FILE)
+		msg.args << this->_commandArgs[0];
+	else
+		msg.args << this->_commandArgs;
 	this->sendFsMessage(msg);
 }
 
 void ClientSocket::_processMessage(FsMessage msg)
 {
 	if (msg.messageType != FsMessage::REPLY &&
-		msg.messageType != FsMessage::PROGRESS)
+		msg.messageType != FsMessage::PROGRESS &&
+		msg.messageType != FsMessage::FILE)
 	{
 		qDebug() << "Message Type not correct:" << (int)msg.messageType;
 		return;
@@ -92,8 +99,19 @@ void ClientSocket::_processMessage(FsMessage msg)
 				qDebug() << msg.args;
 		}
 
-		if (this->_command != "push_file")
+		if (!msg.success ||
+			(this->_command != "push_file" && this->_command != "get_file"))
 			this->disconnectFromHost();
+	}
+	else if (msg.messageType ==  FsMessage::FILE)
+	{
+		QString p = this->_commandArgs[1] + QDir::separator()+ msg.args[0];
+		QFile file(p);
+		file.open(QIODevice::WriteOnly);
+		file.write(msg.fileData);
+		file.close();
+		qDebug() << "File saved at:" << p;
+		this->disconnectFromHost();
 	}
 	else
 	{
