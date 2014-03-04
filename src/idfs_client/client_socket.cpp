@@ -61,7 +61,7 @@ void ClientSocket::_createMessageAndSend()
 		msg.args << info.fileName();
 		file.close();
 	}
-	else if (this->_command == "get_file")
+	else if (this->_command == "get_file" || this->_command == "cat")
 		msg.commandType = FsMessage::GET_FILE;
 	else
 		msg.commandType = FsMessage::UNKNOWN_COMMAND;
@@ -100,17 +100,23 @@ void ClientSocket::_processMessage(FsMessage msg)
 		}
 
 		if (!msg.success ||
-			(this->_command != "push_file" && this->_command != "get_file"))
+			(this->_command != "push_file" && this->_command != "get_file"
+			&& this->_command != "cat"))
 			this->disconnectFromHost();
 	}
 	else if (msg.messageType ==  FsMessage::FILE)
 	{
-		QString p = this->_commandArgs[1] + QDir::separator()+ msg.args[0];
-		QFile file(p);
-		file.open(QIODevice::WriteOnly);
-		file.write(msg.fileData);
-		file.close();
-		qDebug() << "File saved at:" << p;
+		if (this->_command == "get_file")
+		{
+			QString p = this->_commandArgs[1] + QDir::separator()+ msg.args[0];
+			QFile file(p);
+			file.open(QIODevice::WriteOnly);
+			file.write(msg.fileData);
+			file.close();
+			qDebug() << "File saved at:" << p;
+		}
+		else /* cat */
+			qDebug() << msg.fileData;
 		this->disconnectFromHost();
 	}
 	else

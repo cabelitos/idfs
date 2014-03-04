@@ -25,7 +25,6 @@ struct Q_DECL_EXPORT FsMessage {
 		TOUCH,
 		PUSH_FILE,
 		GET_FILE
-		/* TODO put commands here */
 	};
 
 	enum FsMessageType {
