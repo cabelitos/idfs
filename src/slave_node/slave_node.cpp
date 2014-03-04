@@ -173,7 +173,7 @@ void SlaveNode::_ready()
 	}
 
 	msg.hostType = FsMessage::SLAVE_NODE;
-	msg.messageType =  FsMessage::INTRODUCTION;
+	msg.messageType =  FsMessage::INTRODUCTION_SLAVE;
 	this->sendFsMessage(msg);
 }
 

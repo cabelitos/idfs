@@ -37,6 +37,7 @@ public:
 signals:
 	void masterNodeMsg(FsMessage fsMessage);
 	void filePartSent(double percent, QString partName);
+	void slaveIntroduction();
 
 private slots:
 	void _timeoutWrite();

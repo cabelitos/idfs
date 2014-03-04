@@ -8,6 +8,7 @@ MasterNodeClient::MasterNodeClient(QObject *parent) :
 {
 	connect(this, SIGNAL(newMessage(FsMessage)), this,
 		SLOT(_socketIdfsNewMessage(FsMessage)));
+	connect(this, SIGNAL(disconnected()), this, SLOT(deleteLater()));
 }
 
 MasterNodeClient::~MasterNodeClient()
@@ -74,7 +75,8 @@ void MasterNodeClient::_socketIdfsNewMessage(FsMessage msg)
 			from FsTree and the idfs_client can know that something has happened.
 		*/
 	}
-	else if (msg.messageType == FsMessage::INTRODUCTION)
+	else if (msg.messageType == FsMessage::INTRODUCTION_SLAVE ||
+			msg.messageType == FsMessage::INTRODUCTION_CLIENT)
 	{
 		this->_isSlave = true;
 		this->_name = msg.host;
@@ -84,6 +86,8 @@ void MasterNodeClient::_socketIdfsNewMessage(FsMessage msg)
 		response.timeStamp = QDateTime::currentDateTime();
 		response.success = true;
 		this->sendFsMessage(response);
+		if (msg.messageType == FsMessage::INTRODUCTION_SLAVE)
+			emit this->slaveIntroduction();
 	}
 	else if (msg.messageType == FsMessage::FILE_PART)
 	{

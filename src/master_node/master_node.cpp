@@ -71,14 +71,20 @@ void MasterNode::incomingConnection(qintptr socketDescriptor)
 	else
 	{
 		qDebug() << "New client!";
-		connect(client, SIGNAL(disconnected()), this,
-			SLOT(_clientDisconnected()));
+		connect(client, SIGNAL(slaveIntroduction()), this,
+			SLOT(_addToSlaves()));
 		connect(client, SIGNAL(masterNodeMsg(FsMessage)), this,
 			SLOT(_clientMessage(FsMessage)));
 		connect(client, SIGNAL(filePartSent(double, QString)), this,
 			SLOT(_filePartSent(double, QString)));
-		this->_clients.append(client);
 	}
+}
+
+void MasterNode::_addToSlaves()
+{
+	MasterNodeClient *sender = dynamic_cast<MasterNodeClient*>(this->sender());
+	connect(sender, SIGNAL(disconnected()), this, SLOT(_slaveDisconnected()));
+	this->_slaves.append(sender);
 }
 
 void MasterNode::_filePartSent(double percent, QString partName)
@@ -96,33 +102,18 @@ void MasterNode::_filePartSent(double percent, QString partName)
 		qDebug() << partName << " not present in _fileProgressReport";
 }
 
-void MasterNode::_clientDisconnected()
+void MasterNode::_slaveDisconnected()
 {
 	MasterNodeClient *client;
-	QMutableListIterator<MasterNodeClient *> it(this->_clients);
+	QMutableListIterator<MasterNodeClient *> it(this->_slaves);
 
 	qDebug() << "Client disconnected !";
 	while (it.hasNext())
 	{
 		client = it.next();
 		if (client->state() == QAbstractSocket::UnconnectedState)
-		{
 			it.remove();
-			client->deleteLater();
-		}
 	}
-}
-
-QList<MasterNodeClient*> MasterNode::_slavesGet()
-{
-	QList<MasterNodeClient *> slaves;
-
-	foreach (MasterNodeClient *client, this->_clients)
-	{
-		if (client->isSlave())
-			slaves.append(client);
-	}
-	return slaves;
 }
 
 bool MasterNode::_sendFileToSlaves(const QString &path,
@@ -130,14 +121,13 @@ bool MasterNode::_sendFileToSlaves(const QString &path,
 	MasterNodeClient *requester,
 	const QByteArray &fileData, QString &errorMsg)
 {
-	QList<MasterNodeClient*> slaves = this->_slavesGet();
-	if (slaves.isEmpty())
+	if (this->_slaves.isEmpty())
 	{
 		errorMsg = "There are no slave nodes connected!";
 		return false;
 	}
 
-	QListIterator<MasterNodeClient *> it(slaves);
+	QListIterator<MasterNodeClient *> it(this->_slaves);
 	qint64 pNum, pos;
 
 	pos = pNum = 0;
@@ -175,9 +165,7 @@ bool MasterNode::_sendFileToSlaves(const QString &path,
 
 bool MasterNode::_fetchFileParts(const FileInfo &info, QString &errorMsg)
 {
-	QList<MasterNodeClient*> slaves = this->_slavesGet();
-
-	if (slaves.isEmpty())
+	if (this->_slaves.isEmpty())
 	{
 		errorMsg = "There are no slave nodes connected!";
 		return false;
@@ -188,7 +176,7 @@ bool MasterNode::_fetchFileParts(const FileInfo &info, QString &errorMsg)
 	foreach (p, info.chunksLocation)
 	{
 		MasterNodeClient *found = 0;
-		foreach(MasterNodeClient *slave, slaves)
+		foreach(MasterNodeClient *slave, this->_slaves)
 		{
 			if (slave->getName() == p.first)
 			{
@@ -200,7 +188,7 @@ bool MasterNode::_fetchFileParts(const FileInfo &info, QString &errorMsg)
 		if (!found)
 		{
 			errorMsg = "Slave:" + p.first + " not found!";
-			foreach(MasterNodeClient *slave, slaves)
+			foreach(MasterNodeClient *slave, this->_slaves)
 				slave->popFileMsgs();
 			return false;
 		}

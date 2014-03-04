@@ -21,7 +21,7 @@ private:
 		QList<QPair<int, QByteArray> > parts;
 		qint64 total;
 	} FetchFileInfo;
-	QList<MasterNodeClient *> _clients;
+	QList<MasterNodeClient *> _slaves;
 	FsTree _files;
 	QTimer _saveTimeout;
 	QHash<QString, MasterNodeClient*> _fileProgressReport;
@@ -33,16 +33,16 @@ private:
 
 	bool _fetchFileParts(const FileInfo &info, QString &errorMsg);
 	void sendFileToClient(FetchFileInfo *info);
-	QList<MasterNodeClient*> _slavesGet();
 
 protected:
 	void incomingConnection(qintptr socketDescriptor);
 
 private slots:
 	void _saveTree();
-	void _clientDisconnected();
+	void _slaveDisconnected();
 	void _clientMessage(FsMessage fsMessage);
 	void _filePartSent(double percent, QString partName);
+	void _addToSlaves();
 
 public:
 	MasterNode(QObject *parent = 0);
