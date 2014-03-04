@@ -54,6 +54,7 @@ FsTree FsTree::loadFromDisk(const QString &path)
 	stream.setDevice(&file);
 	stream >> newTree;
 	qDebug() << "File system image at:" << path;
+	file.close();
 	return newTree;
 }
 
@@ -68,6 +69,7 @@ bool FsTree::sendToFile(const QString &path)
 	stream.setDevice(&file);
 	stream << (*this);
 	this->_dirty = false;
+	file.close();
 	return true;
 }
 
