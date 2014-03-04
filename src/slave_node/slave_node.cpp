@@ -129,7 +129,8 @@ void SlaveNode::_processMessage(FsMessage msg)
 			dir.cd(partFilePath);
 			QString fileFinalPath = dir.absoluteFilePath(msg.args[1]);
 			QFile file(fileFinalPath);
-			resp.success = file.open(QIODevice::WriteOnly);
+			resp.success = file.open(QIODevice::Truncate |
+				QIODevice::WriteOnly);
 			if (!resp.success)
 			{
 				resp.errorMessage = "Could not create the file";
