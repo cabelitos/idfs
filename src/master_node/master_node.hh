@@ -32,7 +32,7 @@ private:
 		const QByteArray &fileData, QString &errorMsg);
 
 	bool _fetchFileParts(const FileInfo &info, QString &errorMsg);
-	void sendFileToClient(FetchFileInfo *info);
+	void _sendFileToClient(FetchFileInfo *info);
 	bool _fileDelete(const FileInfo &info, QString errorMsg);
 
 protected:

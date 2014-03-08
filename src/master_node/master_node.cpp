@@ -210,7 +210,7 @@ static bool _filePartsSort(const QPair<int, QByteArray> &p1,
 	return p1.first < p2.first;
 }
 
-void MasterNode::sendFileToClient(FetchFileInfo *info)
+void MasterNode::_sendFileToClient(FetchFileInfo *info)
 {
 	QByteArray final;
 	QPair<int,QByteArray> p;
@@ -288,7 +288,7 @@ void MasterNode::_clientMessage(FsMessage fsMessage)
 		{
 			qSort(fetchInfo->parts.begin(), fetchInfo->parts.end(),
 				_filePartsSort);
-			this->sendFileToClient(fetchInfo);
+			this->_sendFileToClient(fetchInfo);
 			this->_fetchFileInfos.remove(fsMessage.args[0]);
 			delete fetchInfo;
 		}
