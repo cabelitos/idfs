@@ -23,6 +23,7 @@ struct FileInfo {
 	bool isDir;
 
 	bool operator==(const FileInfo &other);
+	FileInfo();
 };
 
 QDataStream &operator<<(QDataStream &out, const FileInfo &fileInfo);

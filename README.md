@@ -91,6 +91,11 @@ Fetching the file that was pushed:
 idfs_client get_file /my/remote/file/dir /a/local/dir
 ```
 
+Erasing a file:
+```shell
+idfs_client rm /My/remote/file
+```
+
 What I need to compile it?
 --------------------------
 * Qt5

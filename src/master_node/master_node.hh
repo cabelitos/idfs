@@ -33,6 +33,7 @@ private:
 
 	bool _fetchFileParts(const FileInfo &info, QString &errorMsg);
 	void sendFileToClient(FetchFileInfo *info);
+	bool _fileDelete(const FileInfo &info, QString errorMsg);
 
 protected:
 	void incomingConnection(qintptr socketDescriptor);

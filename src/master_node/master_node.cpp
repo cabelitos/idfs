@@ -227,6 +227,45 @@ void MasterNode::sendFileToClient(FetchFileInfo *info)
 	info->requester->sendFsMessage(msg);
 }
 
+bool MasterNode::_fileDelete(const FileInfo &info, QString errorMsg)
+{
+	/* Before delete, check if all nodes that contains the file part are online */
+	QPair<QString, QString> p;
+	QList <QPair <QString, MasterNodeClient *> > toDelete;
+
+	foreach (p, info.chunksLocation)
+	{
+		bool found = false;
+		foreach (MasterNodeClient *slave, this->_slaves)
+		{
+			if (p.first == slave->getName())
+			{
+				found = true;
+				toDelete.append(qMakePair(p.second, slave));
+				break;
+			}
+		}
+		if (!found)
+		{
+			errorMsg = "The slave node " + p.first+ " is not online!";
+			return false;
+		}
+	}
+
+	QPair<QString, MasterNodeClient *> deletePair;
+	foreach (deletePair, toDelete)
+	{
+		FsMessage msg;
+		msg.hostType =	 FsMessage::MASTER_NODE;
+		msg.timeStamp = QDateTime::currentDateTime();
+		msg.messageType =	FsMessage::DELETE_FILE;
+		msg.args << deletePair.first;
+		deletePair.second->pushFileMsg(msg);
+	}
+
+	return true;
+}
+
 void MasterNode::_clientMessage(FsMessage fsMessage)
 {
 	qDebug() << "New message!";
@@ -267,6 +306,27 @@ void MasterNode::_clientMessage(FsMessage fsMessage)
 		{
 			response.success = false;
 			response.errorMessage = "Unknown command!";
+		}
+		else if(fsMessage.commandType == FsMessage::RM)
+		{
+			QList <FileInfo> infos = this->_files.values(fsMessage.args[0]);
+			if (infos.isEmpty() || infos.size() > 1)
+			{
+				response.success = false;
+				response.errorMessage = "You can only delete one file at once";
+			}
+			else if (this->_slaves.isEmpty())
+			{
+				response.success = false;
+				response.errorMessage = "There are no slaves connected!";
+			}
+			else
+			{
+				response.success = _fileDelete(infos[0],
+					response.errorMessage);
+				if (response.success)
+					this->_files.rm(fsMessage.args[0]);
+			}
 		}
 		else if (fsMessage.commandType == FsMessage::LS)
 		{

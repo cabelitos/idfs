@@ -95,6 +95,28 @@ void SlaveNode::_processMessage(FsMessage msg)
 		resp.args << fileName.section("-p", -1);
 		this->sendFsMessage(resp);
 	}
+	else if (msg.messageType == FsMessage::DELETE_FILE)
+	{
+		FsMessage resp;
+
+		resp.hostType = FsMessage::SLAVE_NODE;
+		resp.messageType =  FsMessage::REPLY;
+		if (!this->_fileLocations.contains(msg.args[0]))
+		{
+			resp.success = false;
+			resp.errorMessage = "Part not present!";
+		}
+		else
+		{
+			QFile file(this->_fileLocations[msg.args[0]]);
+			file.remove();
+			this->_fileLocations.remove(msg.args[0]);
+			this->_fileLocationsDirty = true;
+			resp.success = true;
+		}
+		this->sendFsMessage(resp);
+		qDebug() << this->_fileLocations;
+	}
 	else if (msg.messageType == FsMessage::REPLY)
 	{
 		if (!msg.success)

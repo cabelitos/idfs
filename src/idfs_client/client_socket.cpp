@@ -63,6 +63,8 @@ void ClientSocket::_createMessageAndSend()
 	}
 	else if (this->_command == "get_file" || this->_command == "cat")
 		msg.commandType = FsMessage::GET_FILE;
+	else if (this->_command == "rm")
+		msg.commandType = FsMessage::RM;
 	else
 		msg.commandType = FsMessage::UNKNOWN_COMMAND;
 

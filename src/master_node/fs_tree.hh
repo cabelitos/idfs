@@ -29,6 +29,7 @@ public:
 	bool ls(const QString &path, QStringList &files);
 	bool insertFile(const QString &path, qint64 fileSize, QString &errorMsg);
 	bool addChunckToFileInfo(const QString &path,const QString &slaveName, const QString &filePart);
+	void rm(const QString &path);
 
 	QString createPath(const QString &fileName, const QString &basePath);
 

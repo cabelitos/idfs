@@ -203,6 +203,18 @@ bool FsTree::addChunckToFileInfo(const QString &path,
 	return true;
 }
 
+void FsTree::rm(const QString &path)
+{
+	QString parent = path.left(path.lastIndexOf(FsTree::DIR_SEPARATOR));
+
+	if (parent.isEmpty() || parent.isNull())
+		parent = FsTree::DIR_SEPARATOR;
+
+	FileInfo info = this->value(path);
+	this->remove(path);
+	this->remove(parent, info);
+}
+
 bool FsTree::mkdir(const QString &path, QString &errorMsg)
 {
 	QStringList splited = path.split(FsTree::DIR_SEPARATOR,

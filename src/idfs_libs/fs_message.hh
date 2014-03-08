@@ -24,7 +24,8 @@ struct Q_DECL_EXPORT FsMessage {
 		MKDIR,
 		TOUCH,
 		PUSH_FILE,
-		GET_FILE
+		GET_FILE,
+		RM
 	};
 
 	enum FsMessageType {
@@ -34,6 +35,7 @@ struct Q_DECL_EXPORT FsMessage {
 		INTRODUCTION_CLIENT,
 		STORE_FILE,
 		FILE_PART,
+		DELETE_FILE,
 		FILE,
 		REPLY,
 		PROGRESS,

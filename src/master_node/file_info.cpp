@@ -1,5 +1,9 @@
 #include "file_info.hh"
 
+FileInfo::FileInfo() : size(0), isDir(false)
+{
+}
+
 QDataStream &operator<<(QDataStream &out, const FileInfo &fileInfo)
 {
 	out << fileInfo.fileName << fileInfo.aTime << fileInfo.cTime
@@ -18,10 +22,7 @@ QDataStream &operator>>(QDataStream &in, FileInfo &fileInfo)
 
 bool FileInfo::operator==(const FileInfo &other)
 {
-	if (this->fileName == other.fileName && this->aTime == other.aTime &&
-		this->mTime == other.mTime && this->cTime == other.cTime &&
-		this->isDir == other.isDir && this->size == other.size &&
-		this->chunksLocation == other.chunksLocation)
+	if (this->fileName == other.fileName)
 		return true;
 	return false;
 }
